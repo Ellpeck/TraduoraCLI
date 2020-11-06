@@ -3,6 +3,16 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <Authors>Ellpeck</Authors>
+        <Description>Command-line interface for importing and exporting translations to traduora</Description>
+        <PackageTags>cli commandline interface traduora translation server</PackageTags>
+        <PackageProjectUrl>https://github.com/Ellpeck/TraduoraCLI</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Ellpeck/TraduoraCLI</RepositoryUrl>
+        <PackageLicenseUrl>https://github.com/Ellpeck/TraduoraCLI/blob/main/LICENSE</PackageLicenseUrl>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>traduora</ToolCommandName>
+        <VersionPrefix>1.0.0</VersionPrefix>
     </PropertyGroup>
 
     <ItemGroup>

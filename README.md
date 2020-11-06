@@ -12,7 +12,7 @@ First of all, you have to log in to your traduora instance:
 ```
 traduora login -s "https://traduora.example.com" -u email@example.com -p mypassword
 ```
-If you want to log in with a client instead, be sure to add the `-c` option. The authentication token will be stored in your user profile directory for future use.
+The authentication token will then be stored in your user profile directory for future use.
 
 ## Showing stats
 ```

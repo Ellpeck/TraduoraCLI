@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CommandLine;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TraduoraCLI.Misc;
 
@@ -22,21 +24,40 @@ namespace TraduoraCLI {
                     v => (Task<int>) v.GetType().GetMethod("Parse").Invoke(v, null),
                     e => Task.FromResult(-1));
             } catch (Exception e) {
-                Console.WriteLine(e.Message);
-                return -1;
+                switch (e) {
+                    case ProjectDoesNotExistException _:
+                    case NotAuthenticatedException _:
+                    case ResultException _:
+                        Console.WriteLine(e.Message);
+                        return 1;
+                    default:
+                        throw;
+                }
             }
         }
 
-        public static async Task<JObject> Post(string location, JObject content, bool auth = true) {
-            if (auth)
-                location = await Authenticate(location);
-            var response = await Client.PostAsync(location, new StringContent(content.ToString(), Encoding.UTF8, "application/json"));
-            return await ParseResponse(response);
+        public static Task<JObject> PostJson(string location, JObject content, bool auth = true, Action<HttpStatusCode> errorHandler = null) {
+            return Post(location, new StringContent(content.ToString(), Encoding.UTF8, "application/json"), auth, errorHandler);
         }
 
-        public static async Task<JObject> Get(string location) {
+        public static async Task<JObject> Post(string location, HttpContent content, bool auth = true, Action<HttpStatusCode> errorHandler = null) {
+            if (auth)
+                location = await Authenticate(location);
+            var response = await Client.PostAsync(location, content);
+            CheckError(response, errorHandler);
+            return JObject.Parse(await response.Content.ReadAsStringAsync());
+        }
+
+        public static async Task<JObject> GetJson(string location, Action<HttpStatusCode> errorHandler = null) {
             var response = await Client.GetAsync(await Authenticate(location));
-            return await ParseResponse(response);
+            CheckError(response, errorHandler);
+            return JObject.Parse(await response.Content.ReadAsStringAsync());
+        }
+
+        public static async Task<string> GetString(string location, Action<HttpStatusCode> errorHandler = null) {
+            var response = await Client.GetAsync(await Authenticate(location));
+            CheckError(response, errorHandler);
+            return await response.Content.ReadAsStringAsync();
         }
 
         public static FileInfo GetAuthFile() {
@@ -44,7 +65,7 @@ namespace TraduoraCLI {
         }
 
         public static async Task<string> GetProjectId(string nameOrId) {
-            var projects = await Get("/api/v1/projects");
+            var projects = await GetJson("/api/v1/projects");
             foreach (var project in (JArray) projects["data"]) {
                 if (project["id"].ToString() == nameOrId)
                     return nameOrId;
@@ -65,12 +86,13 @@ namespace TraduoraCLI {
             return ret;
         }
 
-        private static async Task<JObject> ParseResponse(HttpResponseMessage message) {
-            var result = JObject.Parse(await message.Content.ReadAsStringAsync());
-            var error = result["error"];
-            if (error != null)
-                throw new ResultException($"{error["code"]}: {error["message"]}");
-            return result;
+        private static void CheckError(HttpResponseMessage message, Action<HttpStatusCode> errorHandler) {
+            if (message.StatusCode == HttpStatusCode.OK)
+                return;
+            errorHandler?.Invoke(message.StatusCode);
+            if (message.StatusCode == HttpStatusCode.Unauthorized)
+                throw new NotAuthenticatedException();
+            throw new ResultException($"Error {(int) message.StatusCode}: {message.StatusCode}");
         }
 
     }

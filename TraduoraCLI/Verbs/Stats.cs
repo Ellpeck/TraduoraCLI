@@ -12,7 +12,7 @@ namespace TraduoraCLI.Verbs {
 
         public async Task<int> Parse() {
             var project = await Program.GetProjectId(this.Project);
-            var stats = await Program.Get($"/api/v1/projects/{project}/stats");
+            var stats = await Program.GetJson($"/api/v1/projects/{project}/stats");
 
             var projectStats = stats["data"]["projectStats"];
             Console.WriteLine($"{projectStats["terms"]} terms total");

@@ -19,7 +19,7 @@ namespace TraduoraCLI.Verbs {
         public string Password { get; set; }
 
         public async Task<int> Parse() {
-            var result = await Program.Post($"{this.Site}/api/v1/auth/token", new JObject {
+            var result = await Program.PostJson($"{this.Site}/api/v1/auth/token", new JObject {
                 {"grant_type", "password"},
                 {"username", this.Username},
                 {"password", this.Password}
